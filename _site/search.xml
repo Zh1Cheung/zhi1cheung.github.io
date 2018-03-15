@@ -2,69 +2,54 @@
 <search>
   
     <entry>
-      <title>Highlight Test</title>
-      <url>/test/2017/07/19/highlight-test/</url>
-      <content type="text">This is a highlight test.
+      <title></title>
+      <url>/2018/03/15/2017-10-01-%E6%B5%B7%E9%87%8F%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86(BD)/</url>
+      <content type="text">海量数据处理
 
-Normal block
+所谓海量数据，就是数据量太大，要么在短时间内无法计算出结果，要么数据太大，无法一次性装入内存。
 
-alert('Hello World!');
-
-
-
-print 'helloworld'
+针对时间，我们可以使用巧妙的算法搭配合适的数据结构，如bitmap/堆/trie树等
+针对空间，就一个办法，大而化小，分而治之。常采用hash映射
 
 
-
-Highlight block
-
-alert( 'Hello, world!' );
-
-
-
-print 'helloworld'
-
-
-
-def foo
-  puts 'foo'
-end
+  Hash映射/分而治之
+  Bitmap
+  Bloom filter(布隆过滤器)
+  双层桶划分
+  Trie树
+  数据库索引
+  倒排索引(Inverted Index)
+  外排序
+  simhash算法
+  分布处理之Mapreduce
 
 
+估算
 
-def foo
-  puts 'foo'
-end
+在处理海量问题之前，我们往往要先估算下数据量，能否一次性载入内存？如果不能，应该用什么方式拆分成小块以后映射进内存？每次拆分的大小多少合适？以及在不同方案下，大概需要的内存空间和计算时间。
 
-1
-2
-3def foo
-  puts 'foo'
-end
+比如,我们来了解下以下常见问题时间 和 空间 估算 :
+
+8位的电话号码，最多有99 999 999个
+IP地址
+1G内存，2^32 ,差不多40亿，40亿Byte*8 = 320亿 bit
 
 
-#include &amp;lt;iostream&amp;gt;
 
-using namespace std;
 
-void foo(int arg1, int arg2)
-{
+海量处理问题常用的分析解决问题的思路是：
 
-}
 
-int main()
-{
-  string str;
-  foo(1, 2);
-  cout &amp;lt;&amp;lt; &quot;Hello World&quot; &amp;lt;&amp;lt; endl;
-  return 0;
-}
+  分而治之/Hash映射 + hash统计/trie树/红黑树/二叉搜索树 + 堆排序/快速排序/归并排序
+  双层桶划分
+  Bloom filter 、Bitmap
+  Trie树/数据库/倒排索引
+  外排序
+  分布处理之 Hadoop/Mapreduce
 
 
 </content>
       <categories>
-        
-          <category> Test </category>
         
       </categories>
       <tags>
@@ -74,357 +59,913 @@ int main()
     </entry>
   
     <entry>
-      <title>Next Theme Tutorial</title>
-      <url>/tutorial/2017/05/20/next-tutorial/</url>
+      <title></title>
+      <url>/2018/03/15/2017-10-01-%E6%95%B0%E6%8D%AE%E5%BA%93%E7%B4%A2%E5%BC%95/</url>
+      <content type="text">数据库索引
+
+索引使用的数据结构多是B树或B+树。B树和B+树广泛应用于文件存储系统和数据库系统中，mysql使用的是B+树，oracle使用的是B树，Mysql也支持多种索引类型，如b-tree 索引，哈希索引，全文索引等。
+
+一般来说，索引本身也很大，不可能全部存储在内存中，因此索引往往以索引文件的形式存储的磁盘上。索引查找过程中就要产生磁盘I/O消耗，相对于内存存取，I/O存取的消耗要高几个数量级，所以评价一个数据结构作为索引的优劣最重要的指标就是在查找过程中磁盘I/O操作次数的渐进复杂度。换句话说，索引的结构组织要尽量减少查找过程中磁盘I/O的存取次数。
+
+磁盘数据查找过程
+
+
+
+盘面：每一个盘片都有2个上下盘面，每个盘面都可以存储数据
+
+柱面：所有盘面上的同一磁道构成一个圆柱，叫做柱面。磁盘读写按柱面进行;
+只在同一柱面所有的磁头全部读/写完毕后磁头才转移到下一柱面，因为选取磁头只需通过电子切换即可，而选取柱面则必须通过机械切换。电子切换相当快，比在机械上磁头向邻近磁道移动快得多，所以，数据的读/写按柱面进行，而不按盘面进行。也就是说，一个磁道写满数据后，就在同一柱面的下一个盘面来写，一个柱面写满后，才移到下一个扇区开始写数据。读数据也按照这种方式进行，这样就提高了硬盘的读/写效率。
+
+磁道：磁盘在格式化时被划分出许多同心圆，这些同心圆轨迹叫做磁道 track。磁道从外向内从0开始编号。
+
+扇区：信息以脉冲串的形式记录在这些轨迹中，这些同心圆不是连续记录数据，而是被划分成一段段圆弧，每段圆弧叫做一个扇区，扇区从“1”开始编号 。扇区也叫块号。
+
+磁盘在物理上划分为柱面, 磁道，扇区。想要读取扇区的数据，需要将磁头放到这个扇区上方:
+
+
+  先找到柱面，也就是寻道。磁头是不能动的，但可以沿着磁盘半径方向运动，耗时记为寻道事件 t(seek)
+  将目标扇区旋转到磁头下，这个过程耗时是旋转时间t(r)
+
+
+一个磁盘扇区数据读取的时间t = t(seek)+t(r)+t(数据传输) , 在数据库查找数据时，查找时间与访问的磁盘盘块成正比，内存处理时间可以忽略不计。
+
+B树
+
+2-3树：一个节点最多有2个key，红黑树就是2-3树的一种实现。
+
+B树又叫多路平衡查找树。B树可以看做是对2-3树的扩展，允许每个节点有M-1个key，并以升序排列，这里的M就是B树的阶。
+
+B树的度d(d&amp;gt;=2) ，有一些特征：
+
+
+  根节点至少有2个子节点
+  所有的叶节点具有相同的深度 h，也就是树高
+  每个叶子节点至少包含一个key和2个指针，最多2d-1个key和2d个指针，叶节点的指针都是null。每个节点的关键字个数在【d-1,2d-1】之间
+  每个非叶子节点，key和指针互相间隔，节点两端是指针，因此节点中指针个数=key的个数+1
+  每个指针要么是null，要么指向另一个节点
+
+
+如果某个指针在节点node最左边且不为null，则其指向节点的所有key小于v(key1)，其中v(key1)为node的第一个key的值。
+如果某个指针在节点node最右边且不为null，则其指向节点的所有key大于v(keym)，其中v(keym)为node的最后一个key的值。
+如果某个指针在节点node的左右相邻key分别是keyi和keyi+1且不为null，则其指向节点的所有key小于v(keyi+1)且大于v(keyi)。
+
+使用数据结构表示如下：
+
+typedef struct Item{
+     int key;
+     Data data;
+}
+
+#define m 3 //B树的阶
+
+typedef struct BTNode{
+    int degree; //B树的度
+    int keynums; //每个节点key的个数
+     Item  items[m];
+     struct BTNode *p[m];
+}BTNode,* BTree;
+
+typedef struct{
+     BTNode *pt; //指向找到的节点
+     int i; // 节点中关键字的序号 (0,m-1)
+     int tag; //1:查找成功，0：查找失败
+}Result;
+
+Status btree_insert(root,target);
+Status btree_delete(root,target);
+Result btree_find(root,target);
+
+
+
+
+建立索引
+
+当为一张空表创建索引时，数据库系统将为你分配一个索引页，该索引页在你插入数据前一直是空的。此页此时既是根结点，也是叶结点。每当你往表中插入一行数据，数据库系统即向此根结点中插入一行索引记录。
+
+插入和删除新的数据记录都会破坏B-Tree的性质，因此在插入删除时，需要对树进行一个分裂、合并、转移等操作以保持B-Tree性质
+
+查找操作
+
+从root节点出发，对每个节点，找到等于target的key，则查找成功；或者找到大于target的最小k[i], 到 k[i] 左指针指向的子节点继续查找，直到页节点，如果找不到，说明关键字target不在B树中。
+
+分析下时间复杂度：
+
+对于一个度为d的B-Tree,每个节点的索引key个数是d-1, 索引key个数为N，树高h上限是：
+
+2d^h-1=N ==&amp;gt; h=logd^((N+1) /2) ？？？
+
+因此，检索一个key，查找节点的个数的复杂度是O(logd^N)
+
+比如d=2，N=1,000,000 (1百万)，h差不多20个
+d=3,N=1,000,000 (1百万) ,h差不多13个(3^11=1,594,323)
+d=4,N=1,000,000 (1百万) ,h差不多10个
+d=5,N=1,000,000 (1百万) ,h差不多9个 (5^9 = 1,953,125)
+d=6,N=1,000,000 (1百万) ,h差不多8个(6^8 = 1,679,616)
+d=7,N=1,000,000 (1百万) ,h差不多8个
+d=8,N=1,000,000 (1百万) ,h差不多7个
+d=9,N=1,000,000 (1百万) ,h差不多7个
+d=10,N=1,000,000 (1百万) ,h差不多6个
+d=100时，h差不多3个
+
+
+
+数据库系统在设计时，通常将一个节点的大小设为一个页大小(通常4k)，这样保证一个节点在物理上也存储在一个页里，加上计算机存储分配都是按页对其，这样保证一个节点只需要一次I/O.
+
+实际应用中，d都是比较大，通常超过100，因此1百万的数据通常最多访问3个节点，也就是3次I/O, 因此使用B树作为索引结构查询效率非常高。
+
+插入数据
+
+插入数据时，需要更新索引，索引中也要添加一条记录。索引中添加一条记录的过程是：
+
+沿着搜索的路径从root一直到叶节点
+
+每个节点的关键字个数在【d-1,2d-1】之间，当节点的关键字个数是2t-1时，再加入target就违反了B树定义，需要对该节点进行分裂：已中间节点为界，分成2个包含d-1个关键字的子节点（另外还有一个分界关键字，2*(d-1)+1=2d-1），同时把该分界关键字提升到该叶子的父节点中，如果这导致父节点关键字个数超过2d-1,就继续向上分裂，直到根节点。
+
+如下演示动画，往度d=2的B树中插入： 6 10 4 14 5 11 15 3 2 12 1 7 8 8 6 3 6 21 5 15 15 6 32 23 45 65 7 8 6 5 4
+
+
+
+B树和B+树的区别
+
+B树和B+树的区别在于：
+
+
+  B+树的非叶子节点只包含导航信息，不包含实际记录的信息，这可以保证一个固定大小节点可以放入更多个关键字，也就是更大的度d，从而树高h可以更小，从而相比B树有更优秀的查询效率
+  所有的叶子节点和相邻的节点使用链表方式相连，便于区间查找和遍历
+
+
+</content>
+      <categories>
+        
+      </categories>
+      <tags>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title></title>
+      <url>/2018/03/15/2017-10-01-%E5%A4%96%E6%8E%92%E5%BA%8F/</url>
+      <content type="text">对磁盘文件的排序。将待处理的数据不能一次装入内存，先读入部分数据排序后输出到临时文件，采用「排序-归并」的策略。在归并阶段将这些临时文件组合为一个大的有序文件，也即排序结果。
+
+外排序
+
+多路归并,最小堆
+
+比如，要对900 MB的数据进行排序，但机器上只有100 MB的可用内存时，外归并排序按如下方法操作：
+
+
+  读入100 MB的数据至内存中，用某种常规方式（如快速排序、堆排序、归并排序等方法）在内存中完成排序。
+  将排序完成的数据写入磁盘。
+  重复步骤1和2直到所有的数据都存入了不同的100 MB的块（临时文件）中。在这个例子中，有900 MB数据，单个临时文件大小为100 MB，所以会产生9个临时文件。
+  读入每个临时文件（顺串）的前10 MB（ = 100 MB / (9块 + 1)）的数据放入内存中的输入缓冲区，最后的10 MB作为输出缓冲区。（实践中，将输入缓冲适当调小，而适当增大输出缓冲区能获得更好的效果。）
+  执行九路归并算法，将结果输出到输出缓冲区。一旦输出缓冲区满，将缓冲区中的数据写出至目标文件，清空缓冲区。一旦9个输入缓冲区中的一个变空，就从这个缓冲区关联的文件，读入下一个10M数据，除非这个文件已读完。这是“外归并排序”能在主存外完成排序的关键步骤 – 因为“归并算法”(merge algorithm)对每一个大块只是顺序地做一轮访问(进行归并)，每个大块不用完全载入主存。
+
+
+为了增加每一个有序的临时文件的长度，可以采用置换选择排序（Replacement selection sorting）。它可以产生大于内存大小的顺串。具体方法是在内存中使用一个最小堆进行排序，设该最小堆的大小为M。算法描述如下：
+
+
+  初始时将输入文件读入内存，建立最小堆。
+  将堆顶元素输出至输出缓冲区。然后读入下一个记录：
+    
+      若该元素的关键码值不小于刚输出的关键码值，将其作为堆顶元素并调整堆，使之满足堆的性质；
+      否则将新元素放入堆底位置，将堆的大小减1。
+    
+  
+  重复第2步，直至堆大小变为0。
+  此时一个顺串已经产生。将堆中的所有元素建堆，开始生成下一个顺串。[3]
+
+
+此方法能生成平均长度为2M的顺串，可以进一步减少访问外部存储器的次数，节约时间，提高算法效率。
+
+</content>
+      <categories>
+        
+      </categories>
+      <tags>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title></title>
+      <url>/2018/03/15/2017-10-01-%E5%8F%8C%E5%B1%82%E6%A1%B6%E5%88%92%E5%88%86/</url>
+      <content type="text">双层桶不是一种数据结构，只是一种算法思维。分而治之思想。
+双层桶划分
+
+当我们有一大推数据需要处理时，局限于各种资源限制(主要说内存)不能一次处理完成，这是需要将一大堆数据分成多个小段数据。通过处理各个小段数据完成最终任务。
+
+双层这里是虚指，并不是一定把数据分成2份，也可能多份。比如下面几个问题：
+
+
+  2.5亿个整数中找出不重复的整数的个数，内存空间不足以容纳这2.5亿个整数。
+  5亿个int找它们的中位数
+
+
+第一个问题，2.5亿(2^32=4,294,967,296)个数,我们将这2^32个数分到2^8=256个区域(文件中)。每个文件中的平均数字个数差不多 2^24个(1千7百万个)。
+0~2^24 第一个文件，2^24~2^25第二个文件
+
+假设32位机，装下这些数字需要的内存是 2^24*4=2^26=64MB,也可以不用将文件一次性读入内存而是采用流式读取。
+
+然后对每个文件使用bitmap处理，每2bit(2-bitmap)表示一个整数，00表示整数未出现，01表示出现一次，10表示出现两次及其以上。这样，每个文件2^24个数字，最大数2^32/(8/2)=2^30=1GB内存
+
+这个问题倒是更新是bitmap的应用，没有很好体现双层桶分治的优势。
+
+第二个问题，首先我们将int划分为2^16个区域，然后读取数据统计落到各个区域里的数的个数，之后我们根据统计结果就可以判断中位数落到那个区域，同时知道这个区域中的第几大数刚好是中位数。然后第二次扫描我们只统计落在这个区域中的那些数就可以了。
+
+适用问题领域是：top-k，中位数，不重复或重复的数字
+
+</content>
+      <categories>
+        
+      </categories>
+      <tags>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title></title>
+      <url>/2018/03/15/2017-10-01-%E5%88%86%E5%B8%83%E5%A4%84%E7%90%86%E4%B9%8BMapreduce/</url>
+      <content type="text">分布处理之Mapreduce
+
+MapReduce是Google提出的一个软件架构，用于大规模数据集（大于1TB）的并行运算。概念“Map（映射）”和“Reduce（归纳）”，及他们的主要思想，都是从函数式编程语言借来的，还有从矢量编程语言借来的特性。MapReduce的伟大之处就在于让不熟悉并行编程的程序员也能充分发挥分布式系统的威力。
+
+Mapreduce工作原理
+
+举一个例子：10年内所有论文(当然有很多很多篇)里面出现最多的几个单词。
+
+我们把论文集分层N份，一台机器跑一个作业。这个方法跑得快，但是有部署成本，需要把程序copy到别的机器，要把论文分N份，且还需要最后把N个运行结果整合起来。这其实就是Mapreduce本质。
+
+map函数和reduce函数是交给用户实现的，这两个函数定义了任务本身。
+
+
+  map函数：接受一个键值对（key-value pair），产生一组中间键值对。MapReduce框架会将map函数产生的中间键值对里键相同的值传递给一个reduce函数。Map操作是可以高度并行的。
+  reduce函数：接受一个键，以及相关的一组值，将这组值进行合并产生一组规模更小的值（通常只有一个或零个值）。
+
+
+Hadoop
+
+谷歌技术有”三宝”，GFS、MapReduce和大表（BigTable）。
+
+Hadoop实际上就是谷歌三宝的开源实现，Hadoop MapReduce对应Google MapReduce，HBase对应BigTable，HDFS对应GFS。HDFS（或GFS）为上层提供高效的非结构化存储服务，HBase（或BigTable）是提供结构化数据服务的分布式数据库，Hadoop MapReduce（或Google MapReduce）是一种并行计算的编程模型，用于作业调度。
+
+Hadoop 使用java实现。
+
+</content>
+      <categories>
+        
+      </categories>
+      <tags>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title></title>
+      <url>/2018/03/15/2017-10-01-%E5%80%92%E6%8E%92%E7%B4%A2%E5%BC%95(Inverted-Index)/</url>
+      <content type="text">也叫反向索引。是文档检索系统中最常用的数据结构。
+倒排索引(Inverted Index)
+
+常规的索引是文档到关键词的映射，如果对应的文档是
+
+Elasticsearch就是使用倒排索引(inverted index)的结构来做快速的全文搜索。ElasticSearch 不仅用于全文搜索, 还有非常强大的统计功能 (facets)。
+
+携程，58，美团的分享中都提到ES构建实时日志系统，帮助定位系统问题。
+
+Elasticsearch权威指南
+
+</content>
+      <categories>
+        
+      </categories>
+      <tags>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title></title>
+      <url>/2018/03/15/2017-10-01-simhash%E7%AE%97%E6%B3%95/</url>
+      <content type="text">simhash是google用来处理海量文本去重的算法。
+
+simhash算法
+
+1、分词，把需要判断文本分词形成这个文章的特征单词。最后形成去掉噪音词的单词序列并为每个词加上权重，我们假设权重分为5个级别（1~5）。比如：“ 美国“51区”雇员称内部有9架飞碟，曾看见灰色外星人 ” ==&amp;gt; 分词后为 “ 美国（4） 51区（5） 雇员（3） 称（1） 内部（2） 有（1） 9架（3） 飞碟（5） 曾（1） 看见（3） 灰色（4） 外星人（5）”，括号里是代表单词在整个句子里重要程度，数字越大越重要。
+
+2、hash，通过hash算法把每个词变成hash值，比如“美国”通过hash算法计算为 100101,“51区”通过hash算法计算为 101011。这样我们的字符串就变成了一串串数字，还记得文章开头说过的吗，要把文章变为数字计算才能提高相似度计算性能，现在是降维过程进行时。
+
+3、加权，通过 2步骤的hash生成结果，需要按照单词的权重形成加权数字串，比如“美国”的hash值为“100101”，通过加权计算为“4 -4 -4 4 -4 4”；“51区”的hash值为“101011”，通过加权计算为 “ 5 -5 5 -5 5 5”。
+
+4、合并，把上面各个单词算出来的序列值累加，变成只有一个序列串。比如 “美国”的 “4 -4 -4 4 -4 4”，“51区”的 “ 5 -5 5 -5 5 5”， 把每一位进行累加， “4+5 -4+-5 -4+5 4+-5 -4+5 4+5” ==》 “9 -9 1 -1 1 9”。这里作为示例只算了两个单词的，真实计算需要把所有单词的序列串累加。
+
+5、降维，把4步算出来的 “9 -9 1 -1 1 9” 变成 0 1 串，形成我们最终的simhash签名。 如果每一位大于0 记为 1，小于0 记为 0。最后算出结果为：“1 0 1 0 1 1”
+
+simhash计算过程图
+
+
+大家可能会有疑问，经过这么多步骤搞这么麻烦，不就是为了得到个 0 1 字符串吗？我直接把这个文本作为字符串输入，用hash函数生成 0 1 值更简单。其实不是这样的，传统hash函数解决的是生成唯一值，比如 md5、hashmap等。md5是用于生成唯一签名串，只要稍微多加一个字符md5的两个数字看起来相差甚远；hashmap也是用于键值对查找，便于快速插入和查找的数据结构。不过我们主要解决的是文本相似度计算，要比较的是两个文章是否相识，当然我们降维生成了hashcode也是用于这个目的。看到这里估计大家就明白了，我们使用的simhash就算把文章中的字符串变成 01 串也还是可以用于计算相似度的，而传统的hashcode却不行。我们可以来做个测试，两个相差只有一个字符的文本串，“你妈妈喊你回家吃饭哦，回家罗回家罗” 和 “你妈妈叫你回家吃饭啦，回家罗回家罗”。
+
+通过simhash计算结果为：
+
+1000010010101101111111100000101011010001001111100001001011001011
+
+1000010010101101011111100000101011010001001111100001101010001011
+
+通过 hashcode计算为：
+
+1111111111111111111111111111111110001000001100110100111011011110
+
+1010010001111111110010110011101
+
+大家可以看得出来，相似的文本只有部分 01 串变化了，而普通的hashcode却不能做到，这个就是局部敏感哈希的魅力。
+</content>
+      <categories>
+        
+      </categories>
+      <tags>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title></title>
+      <url>/2018/03/15/2017-10-01-Hash%E6%98%A0%E5%B0%84,%E5%88%86%E8%80%8C%E6%B2%BB%E4%B9%8B/</url>
+      <content type="text">这里的Hash映射是指通过一种映射散列的方式，将海量数据均匀分布在对应的内存或更小的文件中
+
+Hash映射,分而治之
+
+使用hash映射有个最重要的特点是: hash值相同的两个串不一定一样，但是两个一样的字符串hash值一定相等。哈希函数如下：
+
+int hash = 0;
+for (int i=0;i&amp;lt;s.length();i++){
+	hash = (R*hash +s.charAt(i)%M);
+}
+
+
+
+大文件映射成多个小文件。具体操作是，比如要拆分到100(M)个文件：
+
+
+  对大文件中的每条记录求hash值，然后对M取余数，即 hash(R)%M，结果为K
+  将记录R按结果K分配到第K个文件，从而完成数据拆分
+
+
+这样，两条相同的记录肯定会被分配到同一个文件。
+
+</content>
+      <categories>
+        
+      </categories>
+      <tags>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title></title>
+      <url>/2018/03/15/2017-10-01-Bloom-filter(%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8)/</url>
+      <content type="text">Bloom Filter是由Bloom在1970年提出的一种多哈希函数映射的快速查找算法。通常应用在一些需要快速判断某个元素是否属于集合，但是并不严格要求100%正确的场合。
+
+Bloom filter(布隆过滤器)
+
+Bloom filter 特点
+
+为了说明Bloom Filter存在的重要意义，举一个实例：假设要你写一个网络蜘蛛（web crawler）。由于网络间的链接错综复杂，蜘蛛在网络间爬行很可能会形成“环”。为了避免形成“环”，就需要知道蜘蛛已经访问过那些URL。给一个URL，怎样知道蜘蛛是否已经访问过呢？稍微想想，就会有如下几种方案：
+
+
+  将访问过的URL保存到数据库。
+  用HashSet将访问过的URL保存起来。那只需接近O(1)的代价就可以查到一个URL是否被访问过了。
+  URL经过MD5或SHA-1等单向哈希后再保存到HashSet或数据库。
+  BitMap方法。建立一个BitSet，将每个URL经过一个哈希函数映射到某一位。
+
+
+方法1~3都是将访问过的URL完整保存，方法4则只标记URL的一个映射位。以上方法在数据量较小的情况下都能完美解决问题，但是当数据量变得非常庞大时问题就来了。
+
+方法1的缺点：数据量变得非常庞大后关系型数据库查询的效率会变得很低。而且每来一个URL就启动一次数据库查询是不是太小题大做了？
+方法2的缺点：太消耗内存。随着URL的增多，占用的内存会越来越多。就算只有1亿个URL，每个URL只算50个字符，就需要5GB内存。
+方法3：由于字符串经过MD5处理后的信息摘要长度只有128Bit，SHA-1处理后也只有160Bit，因此方法3比方法2节省了好几倍的内存。
+方法4消耗内存是相对较少的，但缺点是单一哈希函数发生冲突的概率太高。还记得数据结构课上学过的Hash表冲突的各种解决方法么？若要降低冲突发生的概率到1%，就要将BitSet的长度设置为URL个数的100倍。
+
+实质上上面的算法都忽略了一个重要的隐含条件：允许小概率的出错，不一定要100%准确！也就是说少量url实际上没有没网络蜘蛛访问，而将它们错判为已访问的代价是很小的——大不了少抓几个网页呗。
+
+Bloom filter 算法
+
+Bloom filter可以看做是对bitmap的扩展。只是使用多个hash映射函数，从而减低hash发生冲突的概率。算法如下:
+
+
+  创建 m 位的bitset，初始化为0， 选中k个不同的哈希函数
+  第 i 个hash 函数对字符串str 哈希的结果记为 h(i,str) ,范围是（0，m-1）
+  
+    将字符串记录到bitset的过程：对于一个字符串str,分别记录h(1,str),h(2,str)…,h(k,str)。 然后将bitset的h(1,str),h(2,str)…,h(k,str)位置1。也就是将一个str映射到bitset的 k 个二进制位。
+  
+  
+    检查字符串是否存在:对于字符串str，分别计算h(1，str)、h(2，str),…,h(k，str)。然后检查BitSet的第h(1，str)、h(2，str),…,h(k，str) 位是否为1，若其中任何一位不为1则可以判定str一定没有被记录过。若全部位都是1，则“认为”字符串str存在。但是若一个字符串对应的Bit全为1，实际上是不能100%的肯定该字符串被Bloom Filter记录过的。（因为有可能该字符串的所有位都刚好是被其他字符串所对应）这种将该字符串划分错的情况，称为false positive 。
+  
+  删除字符串:字符串加入了就被不能删除了，因为删除会影响到其他字符串。实在需要删除字符串的可以使用Counting bloomfilter(CBF)。
+
+
+Bloom Filter 使用了k个哈希函数，每个字符串跟k个bit对应。从而降低了冲突的概率。
+
+最优的哈希函数个数，位数组m大小
+
+哈希函数的选择对性能的影响应该是很大的，一个好的哈希函数要能近似等概率的将字符串映射到各个Bit。选择k个不同的哈希函数比较麻烦，一种简单的方法是选择一个哈希函数，然后送入k个不同的参数。
+
+在原始个数位n时，那这里的k应该取多少呢？位数组m大小应该取多少呢？这里有个计算公式:k=(ln2)*(m/n), 当满足这个条件时，错误率最小。
+
+假设错误率为0.01， 此时m 大概是 n 的13倍，k大概是8个。 这里的n是元素记录的个数，m是bit位个数。如果每个元素的长度原大于13，使用Bloom Filter就可以节省内存。
+
+错误率估计
+
+实现示例
+
+#define SIZE 15*1024*1024
+char a[SIZE]; /* 15MB*8 = 120M bit空间 */
+memset(a,0,SIZE);
+
+int seeds[] = { 5, 7, 11, 13, 31, 37, 61};
+
+int hashcode(int cap,int seed, string key){
+	int hash = 0;
+	for (int i=0;i&amp;lt;key.length();i++){
+		hash = (seed*hash +key.charAt(i));
+	}
+	return hash &amp;amp; (cap-1);
+}
+
+
+
+对每个字符串str求哈希就可以使用 hashcode(SIZE*8,seeds[i],str) ,i 的取值范围就是 （0，k）。
+
+Bloom filter应用
+
+
+  拼写检查一类的字典应用
+  数据库系统
+  网络领域（爬虫，web cache sharing）
+
+
+参考
+http://www.cnblogs.com/heaad/archive/2011/01/02/1924195.html
+http://blog.csdn.net/jiaomeng/article/details/1495500  
+http://pages.cs.wisc.edu/~cao/papers/summary-cache/node8.html  哈希函数个数k、位数组大小m 测试论证
+
+</content>
+      <categories>
+        
+      </categories>
+      <tags>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title>Machine Learning</title>
+      <url>/ml/2017/10/30/Machine-Learning/</url>
+      <content type="text">它是人工智能的核心，是使计算机具有智能的根本途径，其应用遍及人工智能的各个领域，它主要使用归纳、综合而不是演绎。
+
+数学是基础
+微积分
+概率论和统计学
+线性代数（矩阵，向量）
+数值数学（数值分析，线性规划，凸优化理论，常见数值优化算法）
+实分析和泛函的基础
+
+《统计学习方法》 李航博士
+
+机器学习
+
+机器学习 机器学习是近20多年兴起的一门多领域交叉学科，涉及概率论、统计学、逼近论、凸分析、算法复杂度理论等多门学科。机器学习理论主要是设计和分析一些让计算机可以自动“学习”的算法。机器学习算法是一类从数据中自动分析获得规律，并利用规律对未知数据进行预测的算法。因为学习算法中涉及了大量的统计学理论，机器学习与统计推断学联系尤为密切，也被称为统计学习理论。算法设计方面，机器学习理论关注可以实现的，行之有效的学习算法。
+
+从大量数据中找到规律和知识，然后用规律和知识做预测和决策。
+
+监督学习
+
+从给定的训练数据集中学习一个函数，当新数据到来时，可以根据这个函数预测结果。
+
+Square判断一笔交易是否是欺诈，信用卡咋骗
+Airbnb 预测用户网络平台上的违规操作
+Airbnb 搜索引擎，搜索结果最大程度可能是用户感兴趣的租房
+Airbnb 预测一个房租的最佳定价范围
+
+线性回归
+决策树
+
+Aerosolve
+Scikit-Learn python
+
+无监督学习
+
+从一个输入集里选择识别隐藏的有用的信息，比如从生物信息的DNA里找到负责同一个生物功能的DNA群，图像图形处理里的人脸识别。研究方法是聚类分析。
+
+
+  数据处理与可视化：PCA，LDA，MDS
+  聚类算法
+  稀疏编码
+
+
+增强学习
+
+通过观察来学习应该如何的动作。
+
+机器学习偏向数学问题推导，数据挖掘就是抽特征
+不要沉迷于数学公式推导，理解如何运用数据
+动手实现一些简单的算法，如感知机，k近邻，线性回归
+找一个实际案例，从他的算法选择，特征参数选取调整，以及数据管道的建立等系统的学习一下
+
+基本不会去实现这些基础算法，都有现成的开源工具
+
+概率图模型（Probabilistic graphical model）
+两个核心的机器学习模型：Latent Dirichlet Allocation（LDA） Probabilistic Matrix Factorization（PMF）
+统计计算（Statistical computing）	
+深度学习（Deep learning）
+优化（optimization）
+PAC学习理论（PAC Learning）
+非参数贝叶斯统计（Non-parametric Bayesian statistics）
+
+参考链接：http://www.zhihu.com/question/21714701
+
+分类器
+
+
+  Naive Bayes
+  Linear Discriminant Analysis
+  Logistic Regression
+  Linear SVM
+  Kernel SVM
+  Adaboost
+  Decision
+  Neural network
+
+
+数据挖掘
+
+在知乎的描述中。数据挖掘是指从大量的数据中自动搜索隐藏于其中的有着特殊关系性的信息和知识的过程。
+
+入门参考
+
+Machine learning Andrew Ng 在 coursera公开课。最好能完成所有作业。课程讲义http://cs229.stanford.edu/materials.html
+
+网易的andrew ng公开课， 这个也不错，年代久远一些。
+
+julyedu 课程大纲
+
+《机器学习基石》 https://www.coursera.org/course/ntumlone
+
+《机器学习技法》 公开课
+
+《机器学习实战》
+
+《机器学习：实用案例解析》 本书比较全面系统地介绍了机器学习的方法和技术。全书案例既有分类问题，也有回归问题；既包含监督学习，也涵盖无监督学习。本书讨论的案例从分类讲到回归，然后讨论了聚类、降维、最优化问题等。这些案例包括分类：垃圾邮件识别，排序：智能收件箱，回归模型：预测网页访问量，正则化：文本回归，最优化：密码破解，无监督学习：构建股票市场指数，空间相似度：用投票记录对美国参议员聚类，推荐系统：给用户推荐R语言包，社交网络分析：在Twitter上感兴趣的人，模型比较：给你的问题找到最佳算法。各章对原理的叙述力求概念清晰、表达准确，突出理论联系实际，富有启发性，易于理解。在探索这些案例的过程中用到的基本工具就是R统计编程语言。
+
+《Machine Learning》 Tom Mitchell 
+Simon Haykin的《神经网络与机器学习》
+
+
+第1课 微积分与概率论
+Taylor展式、梯度下降和牛顿法初步、Jensen不等式、常见分布与共轭分布
+
+第2课 数理统计与参数估计
+切比雪夫不等式、大数定理、中心极限定理、矩估计、极大似然估计
+
+第3课 矩阵和线性代数
+特征向量、对称矩阵对角化、线性方程
+
+第4课 凸优化
+凸集、凸函数、凸优化、KKT条件
+
+第5课 回归
+最小二乘法、高斯分布、梯度下降、过拟合、Logistic回归
+实践示例：线性回归、Logistic回归实现和分析
+
+第6课 梯度下降算法剖析
+自适应学习率、拟牛顿、LBFGS
+实践示例：自适应学习率代码实现和参数调试分析
+
+第7课 最大熵模型
+熵、相对熵、信息增益、最大熵模型、IIS
+
+第8课 聚类
+K-means/K-Medoid/密度聚类/谱聚类
+实践示例：K-means、谱聚类代码实现和参数调试分析
+
+第9课 推荐系统
+协同过滤、隐语义模型pLSA/SVD、随机游走Random Walk
+实践示例：协同过滤代码实现和参数调试分析
+
+第10课 决策树和随机森林
+ID3、C4.5、CART、Bagging、GBDT
+实践案例：使用随机森林进行数据分类
+
+第11课 Adaboost
+Adaboost、前向分步算法
+
+第12课 SVM
+线性可分支持向量机、线性支持向量机、非线性支持向量机、SMO
+实践案例: 使用SVM进行数据分类
+
+第13课 贝叶斯网络
+朴素贝叶斯、有向分离、马尔科夫模型/HMM/pLSA
+
+第14课 EM算法
+GMM、pLSA、HMM
+实践案例：分解男女身高、图像分割
+
+第15课 主题模型
+pLSA、共轭先验分布、LDA
+实践案例：使用LDA进行文档聚类
+
+第16课 采样与变分
+MCMC/KL(p||q)与KL(q||p)
+
+第17课 隐马尔科夫模型HMM
+概率计算问题、参数学习问题、状态预测问题
+实践案例：使用HMM进行中文分词
+
+第18课 条件随机场CRF
+概率无向图模型、MRF、线性链CRF
+
+第19课 人工神经网络
+BP算法、CNN、RNN
+
+第20次课 深度学习
+实践案例：使用Torch进行图像分类及卷积网络可视化的深度学习实践
+
+预习
+
+《高等数学·上下册》；
+《概率论与数理统计·浙大版》、《数理统计学简史·陈希孺》；
+《矩阵分析与应用·张贤达》；
+《凸优化(Convex Optimization) · Stephen Boyd &amp;amp; Lieven Vandenberghe著》；
+《统计学习方法·李航》；
+《Pattern Recognition And Machine Learning · Christopher M. Bishop著》，简称PRML；
+</content>
+      <categories>
+        
+          <category> ML </category>
+        
+      </categories>
+      <tags>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title>Algorithms</title>
+      <url>/algorithms/2017/10/26/Algorithms/</url>
+      <content type="text">链表
+
+
+  链表
+  双向链表
+
+
+哈希表/散列表 (Hash Table)
+
+
+  散列函数
+  碰撞解决
+
+
+字符串算法
+
+
+  排序
+  查找
+    
+      BF算法
+      KMP算法
+      BM算法
+    
+  
+  正则表达式
+  数据压缩
+
+
+二叉树
+
+
+  二叉树
+  二叉查找树
+  伸展树(splay tree 分裂树)
+  平衡二叉树AVL
+  红黑树
+  B树,B+,B*
+  R树
+  Trie树(前缀树)
+  后缀树
+  最优二叉树(赫夫曼树)
+  二叉堆 （大根堆，小根堆）
+  二项树
+  二项堆
+  斐波那契堆(Fibonacci Heap)
+
+
+图的算法
+
+
+  图的存储结构和基本操作（建立，遍历，删除节点，添加节点）
+  最小生成树
+  拓扑排序
+  关键路径
+  最短路径: Floyd,Dijkstra,bellman-ford,spfa
+
+
+排序算法
+
+交换排序算法
+
+
+  冒泡排序
+  插入排序
+  选择排序
+  希尔排序
+  快排
+  归并排序
+  堆排序
+
+
+线性排序算法
+
+
+  桶排序
+
+
+查找算法
+
+
+  顺序表查找：顺序查找
+  有序表查找：二分查找
+  分块查找： 块内无序，块之间有序；可以先二分查找定位到块，然后再到块中顺序查找
+  动态查找:  二叉排序树，AVL树，B- ，B+    （这里之所以叫 动态查找表，是因为表结构是查找的过程中动态生成的）
+  哈希表：  O(1)
+
+
+15个经典基础算法
+
+
+  Hash
+  快速排序
+  快递选择SELECT
+  BFS/DFS （广度/深度优先遍历）
+  红黑树 （一种自平衡的二叉查找树）
+  KMP    字符串匹配算法
+  DP (动态规划 dynamic programming)
+  A*寻路算法： 求解最短路径
+  Dijkstra：最短路径算法 （八卦下：Dijkstra是荷兰的计算机科学家,提出”信号量和PV原语“,”解决哲学家就餐问题”,”死锁“也是它提出来的）
+  遗传算法
+  启发式搜索
+  图像特征提取之SIFT算法
+  傅立叶变换
+  SPFA(shortest path faster algorithm)  单元最短路径算法
+
+
+海量数据处理
+
+
+  Hash映射/分而治之
+  Bitmap
+  Bloom filter(布隆过滤器)
+  Trie树
+  数据库索引
+  倒排索引(Inverted Index)
+  双层桶划分
+  外排序
+  simhash算法
+  分布处理之Mapreduce
+
+
+算法设计思想
+
+
+  迭代法
+  穷举搜索法
+  递推法
+  动态规划
+  贪心算法
+  回溯
+  分治算法
+
+
+</content>
+      <categories>
+        
+          <category> Algorithms </category>
+        
+      </categories>
+      <tags>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title>DB Algorithms</title>
+      <url>/algorithms/2017/10/24/DB-Algorithms/</url>
+      <content type="text">基于数据库技术的各类算法
+
+数据库系统中的算法
+
+
+  电梯算法
+  B树索引
+  R树索引
+  位图索引
+  一趟算法
+  二趟算法
+    
+      基于排序
+      基于散列
+    
+  
+  连接树
+    
+      动态规划
+      贪婪算法
+    
+  
+  分布式并行数据库中的任务分配算法
+    
+      并行算法
+    
+  
+  数据挖掘
+ 	* 发现频繁项集的算法
+    
+      发现近似商品的算法
+      PageRank
+    
+  
+
+
+参考
+
+《数据库系统实现》
+《redis设计与实现》
+
+</content>
+      <categories>
+        
+          <category> Algorithms </category>
+        
+      </categories>
+      <tags>
+        
+          <tag> DB </tag>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title>Graph</title>
+      <url>/2017/10/23/Graph/</url>
       <content type="text">
-  NexT is a high quality elegant Jekyll theme ported from Hexo Next. It is crafted from scratch, with love.
 
+title: Graph
+categories:
 
+  Algorithms
+tags:
+  Graph
 
 
-Live Preview
 
-Screenshots
 
+图算法指利用特制的线条算图求得答案的一种简便算法。无向图、有向图和网络能运用很多常用的图算法，这些算法包括：各种遍历算法（这些遍历类似于树的遍历），寻找最短路径的算法，寻找网络中最低代价路径的算法，回答一些简单相关问题（例如，图是否是连通的，图中两个顶点间的最短路径是什么，等等）的算法。图算法可应用到多种场合，例如：优化管道、路由表、快递服务、通信网站等。
 
-  
-    Desktop
+图
 
-  
-  
-    Sidebar
-  
+图的存储结构
 
 
+  对象和指针
+  矩阵
+  邻接表
 
 
+图的操作
 
-  Sidebar (Post details page)
+遍历
 
 
+  广度优先
+  深度优先
 
 
+Dijkstra
+A*
 
-  Mobile
-
-
-
-
-Installation
-
-Check whether you have Ruby 2.1.0 or higher installed:
-
-ruby --version
-
-
-
-Install Bundler:
-
-gem install bundler
-
-
-
-Clone Jacman theme:
-
-git clone https://github.com/Simpleyyt/jekyll-theme-next.git
-cd jekyll-theme-next
-
-
-
-Install Jekyll and other dependencies from the GitHub Pages gem:
-
-bundle install
-
-
-
-Run your Jekyll site locally:
-
-bundle exec jekyll server
-
-
-
-More Details：Setting up your GitHub Pages site locally with Jekyll
-
-Features
-
-Multiple languages support, including: English / Russian / French / German / Simplified Chinese / Traditional Chinese.
-
-Default language is English.
-
-language: en
-# language: zh-Hans
-# language: fr-FR
-# language: zh-hk
-# language: zh-tw
-# language: ru
-# language: de
-
-
-
-Set language field as following in site _config.yml to change to Chinese.
-
-language: zh-Hans
-
-
-
-Comment support.
-
-NexT has native support for DuoShuo and Disqus comment systems.
-
-Add the following snippets to your _config.yml:
-
-duoshuo:
-  enable: true
-  shortname: your-duoshuo-shortname
-
-
-
-OR
-
-disqus_shortname: your-disqus-shortname
-
-
-
-Social Media
-
-NexT can automatically add links to your Social Media accounts:
-
-social:
-  GitHub: your-github-url
-  Twitter: your-twitter-url
-  Weibo: your-weibo-url
-  DouBan: your-douban-url
-  ZhiHu: your-zhihu-url
-
-
-
-Feed link.
-
-
-  Show a feed link.
-
-
-Set rss field in theme’s _config.yml, as the following value:
-
-
-  rss: false will totally disable feed link.
-  
-    rss:   use sites’ feed link. This is the default option.
-
-    Follow the installation instruction in the plugin’s README. After the configuration is done for this plugin, the feed link is ready too.
-  
-  rss: http://your-feed-url set specific feed link.
-
-
-Up to 5 code highlight themes built-in.
-
-NexT uses Tomorrow Theme with 5 themes for you to choose from.
-Next use normal by default. Have a preview about normal and night:
-
-
-
-
-Head over to Tomorrow Theme for more details.
-
-Configuration
-
-NexT comes with few configurations.
-
-
-# Menu configuration.
-menu:
-  home: /
-  archives: /archives
-
-# Favicon
-favicon: /favicon.ico
-
-# Avatar (put the image into next/source/images/)
-# can be any image format supported by web browsers (JPEG,PNG,GIF,SVG,..)
-avatar: /default_avatar.png
-
-# Code highlight theme
-# available: normal | night | night eighties | night blue | night bright
-highlight_theme: normal
-
-# Fancybox for image gallery
-fancybox: true
-
-# Specify the date when the site was setup
-since: 2013
-
-
-
-
-Browser support
-
-
-</content>
-      <categories>
-        
-          <category> tutorial </category>
-        
-      </categories>
-      <tags>
-        
-      </tags>
-      <tags></tags>
-    </entry>
-  
-    <entry>
-      <title>Emoji Test</title>
-      <url>/2015/09/19/emoji-test/</url>
-      <content type="text">This is an emoji test. :smile: lol.
-
-See emoji cheat sheet for more detail :wink: : https://www.webpagefx.com/tools/emoji-cheat-sheet/.
-
-:bowtie::smile::laughing::blush::smiley::relaxed::smirk:
-:heart_eyes::kissing_heart::kissing_closed_eyes::flushed::relieved::satisfied::grin:
-</content>
-      <categories>
-        
-      </categories>
-      <tags>
-        
-      </tags>
-      <tags></tags>
-    </entry>
-  
-    <entry>
-      <title>Gallery Post</title>
-      <url>/photo/2014/11/18/gallery-post/</url>
-      <content type="text">Nunc dignissim volutpat enim, non sollicitudin purus dignissim id. Nam sit amet urna eu velit lacinia eleifend. Proin auctor rhoncus ligula nec aliquet. Donec sodales molestie lacinia. Curabitur dictum faucibus urna at convallis. Aliquam in lectus at urna rutrum porta. In lacus arcu, molestie ut vestibulum ut, rhoncus sed eros. Sed et elit vitae risus pretium consectetur vel in mi. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi tempus turpis quis lectus rhoncus adipiscing. Proin pulvinar placerat suscipit. Maecenas imperdiet, quam vitae varius auctor, enim mauris vulputate sapien, nec laoreet neque diam non quam.
-
-
-
-
-
-Etiam luctus mauris at mi sollicitudin quis malesuada nibh porttitor. Vestibulum non dapibus magna. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Proin feugiat hendrerit viverra. Phasellus sit amet nunc mauris, eu ultricies tellus. Sed a mi tortor, eleifend varius erat. Proin consectetur molestie tortor eu gravida. Cras placerat orci id arcu tristique ut rutrum justo pulvinar. Maecenas lacinia fringilla diam non bibendum. Aenean vel viverra turpis. Integer ut leo nisi. Pellentesque vehicula quam ut sapien convallis consequat. Aliquam ut arcu purus, eget tempor purus. Integer eu tellus quis erat tristique gravida eu vel lorem.
-</content>
-      <categories>
-        
-          <category> Photo </category>
-        
-      </categories>
-      <tags>
-        
-          <tag> consectetur </tag>
-        
-      </tags>
-      <tags></tags>
-    </entry>
-  
-    <entry>
-      <title>MathJax with Jekyll</title>
-      <url>/opinion/2014/02/16/Mathjax-with-jekyll/</url>
-      <content type="text">One of the rewards of switching my website to Jekyll is the
-ability to support MathJax, which means I can write LaTeX-like equations that get
-nicely displayed in a web browser, like this one \( \sqrt{\frac{n!}{k!(n-k)!}} \) or
-this one \( x^2 + y^2 = r^2 \).
-
-
-
-
-
-What’s MathJax?
-
-If you check MathJax website (www.mathjax.org) you’ll see
-that it is an open source JavaScript display engine for mathematics that works in all
-browsers.
-
-How to implement MathJax with Jekyll
-
-I followed the instructions described by Dason Kurkiewicz for
-using Jekyll and Mathjax.
-
-Here are some important details. I had to modify the Ruby library for Markdown in
-my _config.yml file. Now I’m using redcarpet so the corresponding line in the
-configuration file is: markdown: redcarpet
-
-To load the MathJax javascript, I added the following lines in my layout page.html
-(located in my folder _layouts)
-
-&amp;lt;script type=&quot;text/javascript&quot;
-    src=&quot;http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML&quot;&amp;gt;
-&amp;lt;/script&amp;gt;
-
-Of course you can choose a different file location in your jekyll layouts.
-
-A Couple of Examples
-
-Here’s a short list of examples. To know more about the details behind MathJax, you can
-always checked the provided documentation available at
-http://docs.mathjax.org/en/latest/
-
-I’m assuming you are familiar with LaTeX. However, you should know that MathJax does not
-have the exactly same behavior as LaTeX. By default, the tex2jax preprocessor defines the
-LaTeX math delimiters, which are \\(...\\) for in-line math, and \\[...\\] for
-displayed equations. It also defines the TeX delimiters $$...$$ for displayed
-equations, but it does not define $...$ as in-line math delimiters. Fortunately,
-you can change these predefined specifications if you want to do so.
-
-Let’s try a first example. Here’s a dummy equation:
-
-
-
-How do you write such expression? Very simple: using double dollar signs
-
-$$a^2 + b^2 = c^2$$
-
-To display inline math use \\( ... \\) like this \\( sin(x^2) \\) which gets
-rendered as \( sin(x^2) \)
-
-Here’s another example using type \mathsf
-
-$$ \mathsf{Data = PCs} \times \mathsf{Loadings} $$
-
-which gets displayed as
-
-
-
-Or even better:
-
-\\[ \mathbf{X} = \mathbf{Z} \mathbf{P^\mathsf{T}} \\]
-
-is displayed as
-
-\[ \mathbf{X} = \mathbf{Z} \mathbf{P^\mathsf{T}} \]
-
-If you want to use subscripts like this \( \mathbf{X}_{n,p} \) you need to scape the
-underscores with a backslash like so \mathbf{X}\_{n,p}:
-
-$$ \mathbf{X}\_{n,p} = \mathbf{A}\_{n,k} \mathbf{B}\_{k,p} $$
-
-will be displayed as
-
-\[ \mathbf{X}_{n,p} = \mathbf{A}_{n,k} \mathbf{B}_{k,p} \]
-</content>
-      <categories>
-        
-          <category> opinion </category>
-        
-      </categories>
-      <tags>
-        
-          <tag> resources </tag>
-        
-          <tag> jekyll </tag>
-        
-      </tags>
-      <tags></tags>
-    </entry>
-  
-    <entry>
-      <title>Images</title>
-      <url>/2013/12/27/images/</url>
-      <content type="text">This is a image test post.
-
-
-
-
-
-
-
+用于游戏编程和分布式计算
 
 </content>
       <categories>
@@ -437,317 +978,848 @@ will be displayed as
     </entry>
   
     <entry>
-      <title>Excerpts</title>
-      <url>/2013/12/25/excerpts/</url>
-      <content type="text">The following contents should be invisible in home/archive page.
+      <title>Hash</title>
+      <url>/algorithms/2017/10/22/Hash/</url>
+      <content type="text">散列表使用某种算法操作(散列函数)将键转化为数组的索引来访问数组中的数据，这样可以通过Key-value的方式来访问数据，达到常数级别的存取效率。现在的nosql数据库都是采用key-value的方式来访问存储数据。
+
+散列表
+
+本节围绕以下内容展开：
+
+
+  散列表
+  散列函数设计
+  冲突处理
+  hashmap数据结构
+
+
+散列表是算法在时间和空间上做出权衡的经典例子。通过一个散列函数，将键值key映射到记录的访问地址，达到快速查找的目的。如果没有内存限制，我们可以直接将键作为数组的索引，所有的操作操作只需要一次访问内存就可以完成。但这种情况不太现实。
+
+散列函数
+
+散列函数就是将键转化为数组索引的过程。且这个函数应该易于计算且能够均与分布所有的键。
+
+散列函数最常用的方法是除留余数法。这时候被除数应该选用素数，这样才能保证键值的均匀散步。
+
+散列函数和键的类型有关，每种数据类型都需要相应的散列函数；比如键的类型是整数，那我们可以直接使用除留余数法；这里特别说明下，大多数情况下，键的类型都是字符串，这个时候我们任然可以使用除留余数法，将字符串当做一个特别大的整数。
+
+int hash = 0;
+for (int i=0;i&amp;lt;s.length();i++){
+	hash = (R*hash +s.charAt(i)%M);
+}
 
 
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eget urna vitae velit eleifend interdum at ac nisi. In nec ligula lacus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Sed eu cursus erat, ut dapibus quam. Aliquam eleifend dolor vitae libero pharetra adipiscing. Etiam adipiscing dolor a quam tempor, eu convallis nulla varius. Aliquam sollicitudin risus a porta aliquam. Ut nec velit dolor. Proin eget leo lobortis, aliquam est sed, mollis mauris. Fusce vitae leo pretium massa accumsan condimentum. Fusce malesuada gravida lectus vel vulputate. Donec bibendum porta nibh ut aliquam.
+还有，比如下面的：
 
-Sed lorem felis, congue non fringilla eu, aliquam eu eros. Curabitur orci libero, mollis sed semper vitae, adipiscing in lectus. Aenean non egestas odio. Donec sollicitudin nisi quis lorem gravida, in pharetra mauris fringilla. Duis sit amet faucibus dolor, id aliquam neque. In egestas, odio gravida tempor dictum, mauris felis faucibus purus, sit amet commodo lacus diam vitae est. Ut ut quam eget massa semper sodales. Aenean non ipsum cursus, blandit lectus in, ornare odio. Curabitur ultrices porttitor vulputate.
+Hash hashCode(char *key){
+	int offset = 5;
+	Hash hashCode = 0;
+	while(*key){
+		hashCode = (hashCode &amp;lt;&amp;lt; offset) + *key++;
+	}
+	return hashCode;		
+}
+
+
+
+使用时 hashCode(key) &amp;amp; (size-1)  就可以得到一个 size-1 范围内的hash值
+
+当然，还有其他的散列函数，如平方取中法, 随机数法等。
+
+碰撞解决
+
+不同的关键字得到同一个散列地址 f(key1)=f(key2) ，即为碰撞 。这是我们需要尽量避免的情况。常见的处理方法有：
+
+
+  拉链法
+  线性探测法
+
+
+拉链法
+
+将大小为M的数组中的每个元素指向一条链表，链表中的每个节点都存储了散列值为该元素索引的键值对。每条链表的平均长度是N/M，N是键值对的总个数。如下图：
+
+
+
+添加操作：
+
+
+  通过hash函数得到hashCode
+  通过hashcode得到index
+  如果index处没有链表，建立好新结点，作为新链表的首结点
+  如果index处已经有链表，先要遍历看key是否已经存在，如果存在直接返回，如果不存在，加入链表头部
+
+
+删除操作：
+
+
+  通过hash函数得到hashCode
+  通过hashcode得到index
+  遍历链表，删除结点
+
+
+线性探测法
+
+使用大小为M的数组保存N个键值对，当碰撞发生时，直接检查散列表中的下一个位置。
+
+数据结构和算法
+
+这里给出拉链法构造的hashmap的算法，表示如下：
+
+typedef char * Key;
+typedef int value;
+typedef unsigned int Hash;
+
+/*每个节点表示*/
+typedef struct Entry{
+	Hash hash;
+	Key key;
+	Value value;
+	Entry *next;
+}Entry;
+
+typedef struct HashMap{
+	Entry **heads;
+	unsigned int size; /* 数组大小*/
+	unsigned int usage;/* 键值对的个数*/
+}HashMap;
+
+Hash hashCode(Key);
+HashMap *create(unsigned int size);
+HashMap *put(HashMap *,Key ,Value);
+int get(HashMap *,Key);
+
+HashMap *_putInHead(HashMap *,int index,Key,Value);
+HashMap *_putInList(HashMap *,int index,Key,Value);
+
+Hash hashCode(char *key){
+	int offset = 5;
+	Hash hashCode = 0;
+	while(*key){
+		hashCode = (hashCode &amp;lt;&amp;lt; offset) + *key++;
+	}
+	return hashCode;		
+}
+
+HashMap *create(unsigned int size){
+	HashMap *hashMap = malloc(sizeof(HashMap));
+	hashMap-&amp;gt;size = size;
+	hashMap-&amp;gt;usage = 0;
+	hashMap-&amp;gt;heads = calloc(size,sizeof(Entry *));
+
+	return hashMap;
+}
+
+HashMap *put(HashMap *hashMap,Key key,Value value){
+	if (key == NULL){
+		return hashMap;
+	}
+	Hash hash = hashCode(key);
+	int index = hash &amp;amp; (size-1);/*  */
+	if (hashMap-&amp;gt;heads[index] == NULL){
+		_putInHead(hashMap,index,key,value);
+	}else{
+		_putInList(hashMap,index,key,value);
+	}
+}
+
+Value get(HashMap hashMap*,Key key){
+	if (key == NULL){
+		return hashMap;
+	}
+	Hash hash = hashCode(key);
+	int index = hash &amp;amp; (size-1);/*  */
+
+	Entry *entry = hashMap-&amp;gt;heads[index];
+	while(entry != NULL){
+		if (entry-&amp;gt;hash == hash){
+			return entry-&amp;gt;value;
+		}
+		entry = entry-&amp;gt;next;
+	}
+	return NULL;
+}
+
+HashMap *_putInHead(HashMap *hashMap,int index,Key key,Value value){
+	Entry *newHead = malloc(sizeof(Entry));
+	newHead-&amp;gt;hash = hash;
+	newHead-&amp;gt;key = key;
+	newHead-&amp;gt;value = value;
+
+	hashMap-&amp;gt;heads[index] = newHead;
+	(hashMap-&amp;gt;usage)++;
+	return hashMap;
+}
+
+HashMap *_putInList(HashMap *hashMap,int index,Key key,Value value){
+	Entry *lastEntry = hashMap-&amp;gt;heads[index];
+	while(lastEntry != NULL){
+		if (lastEntry-&amp;gt;hash == hash){
+			return hashMap;
+		}else{
+			lastEntry = lastEntry-&amp;gt;next;
+		}
+	}
+
+	lastEntry = malloc(sizeof(Entry));
+	lastEntry-&amp;gt;hash = hash;
+	lastEntry-&amp;gt;key = key;
+	lastEntry-&amp;gt;value = value;
+	lastEntry-&amp;gt;next = hashMap-&amp;gt;heads[index];
+
+	hashMap-&amp;gt;heads[index] = lastEntry;
+	(hashMap-&amp;gt;usage)++;
+	return hashMap;
+}
+
+
+
+
+Hashmap应用
+
+
+  cocos2d 游戏引擎  CCScheduler
+  linux 内核bcache。 缓存加速技术，使用SSD固态硬盘作为高速缓存，提高慢速存储设备HDD机械硬盘的性能
+  hash表在海量数据处理中有广泛应用。如海量日志中，提取出某日访问百度次数最多的IP
+
+
+参考
+
+《Algorithms》
+
 </content>
       <categories>
         
+          <category> Algorithms </category>
+        
       </categories>
       <tags>
+        
+          <tag> Hash </tag>
         
       </tags>
       <tags></tags>
     </entry>
   
     <entry>
-      <title>Block</title>
-      <url>/foo/2013/12/25/block/</url>
-      <content type="text">This post is used for testing tag plugins. See docs for more info.
+      <title>Search</title>
+      <url>/algorithms/2017/10/21/Search/</url>
+      <content type="text">查找是在大量的信息中寻找一个特定的信息元素，在计算机应用中，查找是常用的基本运算，例如编译程序中符号表的查找。
 
-Block Quote
-
-Normal blockquote
+查找算法
 
 
-  Praesent diam elit, interdum ut pulvinar placerat, imperdiet at magna.
+  顺序查找
+  二分查找
+  分块查找
+  动态查找
+  哈希表
 
 
-Code Block
+顺序查找
 
-Inline code block
+顺序表查找。复杂度O(n)
 
-This is a inline code block: python, print 'helloworld'.
+二分查找
 
-Normal code block
+有序表中查找我们可以使用二分查找。
 
-alert('Hello World!');
+/*
+eg: [1,3,5,6,7,9] k=6
+@return 返回元素的索引下表，找不到就返回-1
+*/
+int binary_search(int *a,int length,int k){
+	int low = 0;
+	int high = length-1;
+	int mid;
 
+	while(low&amp;lt;high){
+		mid = (low+high)/2;
+		if (a[mid] &amp;lt; k) low = mid+1;
+		if (a[mid == k]) return mid;
+		if (a[mid] &amp;gt; k) high = mid-1; 
+	}
 
-
-print &quot;Hello world&quot;
-
-
-
-Highlight code block
-
-print &quot;Hello world&quot;
-
-
-
-def foo
-  puts 'foo'
-end
-
-1
-2
-3def foo
-  puts 'foo'
-end
+	return -1;
+}
 
 
-Gist
 
+分块查找
 
+块内无序，块之间有序；可以先二分查找定位到块，然后再到块中顺序查找。
+
+动态查找
+
+这里之所以叫 动态查找表，是因为表结构是查找的过程中动态生成的。查找结构通常是二叉排序树，AVL树，B- ，B+等。这部分的内容可以去看『二叉树』章节
+
+哈希表
+
+哈希表以复杂度O(1)的成绩位列所有查找算法之首，大量查找的数据结构中都可以看到哈希表的应用。
 
 </content>
       <categories>
         
-          <category> Foo </category>
+          <category> Algorithms </category>
         
       </categories>
       <tags>
+        
+          <tag> Search </tag>
         
       </tags>
       <tags></tags>
     </entry>
   
     <entry>
-      <title>日本語テスト</title>
-      <url>/2013/12/25/%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%83%86%E3%82%B9%E3%83%88/</url>
-      <content type="text">This is a Japanese test post.
-
-私は昨日ついにその助力家というのの上よりするたなけれ。
-
-最も今をお話団はちょうどこの前後なかろでくらいに困りがいるたをは帰着考えたなかって、そうにもするでうたらない。
-
-がたを知っないはずも同時に九月をいよいよたありた。
-
-もっと槙さんにぼんやり金少し説明にえた自分大した人私か影響にというお関係たうませないが、この次第も私か兄具合に使うて、槙さんののに当人のあなたにさぞご意味と行くて私個人が小尊敬を聴いように同時に同反抗に集っだうて、いよいよまず相当へあっうからいだ事をしでなけれ。
+      <title>String</title>
+      <url>/algorithms/2017/10/19/String/</url>
+      <content type="text">字符串在计算机中的应用非常广泛，这里讨论有关字符串的最重要的算法：
+字符串
 
 
-  それでそれでもご時日をしはずはたったいやと突き抜けるますて、その元がは行ったてという獄を尽すていけですた。
-
-
-この中道具の日その学校はあなたごろがすまなりかとネルソンさんの考えるですん、辺の事実ないというご盲従ありたですと、爺さんのためが薬缶が結果までの箸の当時してならて、多少の十月にためからそういう上からとにかくしましないと触れべきものたで、ないうですと多少お人達したのでたた。
-
-From すぐ使えるダミーテキスト - 日本語 Lorem ipsum
-</content>
-      <categories>
-        
-      </categories>
-      <tags>
-        
-      </tags>
-      <tags></tags>
-    </entry>
-  
-    <entry>
-      <title>中文測試</title>
-      <url>/test/test/2013/12/25/%E4%B8%AD%E6%96%87%E6%B8%AC%E8%A9%A6/</url>
-      <content type="text">This is a Chinese test post.
-
-善我王上魚、產生資西員合兒臉趣論。畫衣生這著爸毛親可時，安程幾？合學作。觀經而作建。都非子作這！法如言子你關！手師也。
-
-以也座論頭室業放。要車時地變此親不老高小是統習直麼調未，行年香一？
-
-就竟在，是我童示讓利分和異種百路關母信過明驗有個歷洋中前合著區亮風值新底車有正結，進快保的行戰從：弟除文辦條國備當來際年每小腳識世可的的外的廣下歌洲保輪市果底天影；全氣具些回童但倒影發狀在示，數上學大法很，如要我……月品大供這起服滿老？應學傳者國：山式排只不之然清同關；細車是！停屋常間又，資畫領生，相們制在？公別的人寫教資夠。資再我我！只臉夫藝量不路政吃息緊回力之；兒足灣電空時局我怎初安。意今一子區首者微陸現際安除發連由子由而走學體區園我車當會，經時取頭，嚴了新科同？很夫營動通打，出和導一樂，查旅他。坐是收外子發物北看蘭戰坐車身做可來。道就學務。
-
-國新故。
-
-
-  工步他始能詩的，裝進分星海演意學值例道……於財型目古香亮自和這乎？化經溫詩。只賽嚴大一主價世哥受的沒有中年即病行金拉麼河。主小路了種就小為廣不？
-
-
-From 亂數假文產生器 - Chinese Lorem Ipsum
-</content>
-      <categories>
-        
-          <category> test/test </category>
-        
-      </categories>
-      <tags>
-        
-      </tags>
-      <tags></tags>
-    </entry>
-  
-    <entry>
-      <title>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam justo turpis, tincidunt ac convallis id.</title>
-      <url>/foo/2013/12/25/long-title/</url>
-      <content type="text">This post has a long title. Make sure the title displayed right.
-</content>
-      <categories>
-        
-          <category> Foo </category>
-        
-      </categories>
-      <tags>
-        
-          <tag> Foo </tag>
-        
-      </tags>
-      <tags></tags>
-    </entry>
-  
-    <entry>
-      <title>Categories</title>
-      <url>/foo/bar/baz/2013/12/25/categories/</url>
-      <content type="text">This post contains 3 categories. Make sure your theme can display all of the categories.
-</content>
-      <categories>
-        
-          <category> Foo </category>
-        
-          <category> Bar </category>
-        
-          <category> Baz </category>
-        
-      </categories>
-      <tags>
-        
-      </tags>
-      <tags></tags>
-    </entry>
-  
-    <entry>
-      <title>Link Post</title>
-      <url>/foo/2013/12/25/link-post/</url>
-      <content type="text">This is a link post. Clicking on the link should open Google in a new tab or window.
-</content>
-      <categories>
-        
-          <category> Foo </category>
-        
-      </categories>
-      <tags>
-        
-      </tags>
-      <tags></tags>
-    </entry>
-  
-    <entry>
-      <title>Tags</title>
-      <url>/foo/2013/12/25/tags/</url>
-      <content type="text">This post contains 3 tags. Make sure your theme can display all of the tags.
-</content>
-      <categories>
-        
-          <category> Foo </category>
-        
-      </categories>
-      <tags>
-        
-          <tag> Foo </tag>
-        
-          <tag> Bar </tag>
-        
-          <tag> Baz </tag>
-        
-      </tags>
-      <tags></tags>
-    </entry>
-  
-    <entry>
-      <title>Elements</title>
-      <url>/foo/2013/12/25/elements/</url>
-      <content type="text">The purpose of this post is to help you make sure all of HTML elements can display properly. If you use CSS reset, don’t forget to redefine the style by yourself.
-
-
-
-Heading 1
-
-Heading 2
-
-Heading 3
-
-Heading 4
-
-Heading 5
-
-Heading 6
-
-
-
-Paragraph
-
-Lorem ipsum dolor sit amet, test link consectetur adipiscing elit. Strong text pellentesque ligula commodo viverra vehicula. Italic text at ullamcorper enim. Morbi a euismod nibh. Underline text non elit nisl. Deleted text tristique, sem id condimentum tempus, metus lectus venenatis mauris, sit amet semper lorem felis a eros. Fusce egestas nibh at sagittis auctor. Sed ultricies ac arcu quis molestie. Donec dapibus nunc in nibh egestas, vitae volutpat sem iaculis. Curabitur sem tellus, elementum nec quam id, fermentum laoreet mi. Ut mollis ullamcorper turpis, vitae facilisis velit ultricies sit amet. Etiam laoreet dui odio, id tempus justo tincidunt id. Phasellus scelerisque nunc sed nunc ultricies accumsan.
-
-Interdum et malesuada fames ac ante ipsum primis in faucibus. Sed erat diam, blandit eget felis aliquam, rhoncus varius urna. Donec tellus sapien, sodales eget ante vitae, feugiat ullamcorper urna. Praesent auctor dui vitae dapibus eleifend. Proin viverra mollis neque, ut ullamcorper elit posuere eget.
-
-
-  Praesent diam elit, interdum ut pulvinar placerat, imperdiet at magna.
-
-
-Maecenas ornare arcu at mi suscipit, non molestie tortor ultrices. Aenean convallis, diam et congue ultricies, erat magna tincidunt orci, pulvinar posuere mi sapien ac magna. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Praesent vitae placerat mauris. Nullam laoreet ante posuere tortor blandit auctor. Sed id ligula volutpat leo consequat placerat. Mauris fermentum dolor sed augue malesuada sollicitudin. Vivamus ultrices nunc felis, quis viverra orci eleifend ut. Donec et quam id urna cursus posuere. Donec elementum scelerisque laoreet.
-
-List Types
-
-Definition List (dl)
-
-Definition List TitleThis is a definition list division.
-
-Ordered List (ol)
-
-
-  List Item 1
-  List Item 2
-  List Item 3
-
-
-Unordered List (ul)
-
-
-  List Item 1
-  List Item 2
-  List Item 3
-
-
-Table
-
-
-  
+  排序
+  查找
     
-      Table Header 1
-      Table Header 2
-      Table Header 3
+      单词查找树
+      子串查找
     
   
+  正则表达式:正则表达式是模式匹配的基础,是一个一般化了的子字符串的查找问题,也是搜索工具grep的核心。
+    
+      模式匹配
+      grep
+    
   
+  数据压缩
     
-      Division 1
-      Division 2
-      Division 3
-    
-    
-      Division 1
-      Division 2
-      Division 3
-    
-    
-      Division 1
-      Division 2
-      Division 3
+      赫夫曼树
+      游程编码
     
   
 
 
-Misc Stuff - abbr, acronym, sub, sup, etc.
+参考
 
-Lorem superscript dolor subscript amet, consectetuer adipiscing elit. Nullam dignissim convallis est. Quisque aliquam. cite. Nunc iaculis suscipit dui. Nam sit amet sem. Aliquam libero nisi, imperdiet at, tincidunt nec, gravida vehicula, nisl. Praesent mattis, massa quis luctus fermentum, turpis mi volutpat justo, eu volutpat enim diam eget metus. Maecenas ornare tortor. Donec sed tellus eget sapien fringilla nonummy. NBA Mauris a ante. Suspendisse quam sem, consequat at, commodo vitae, feugiat in, nunc. Morbi imperdiet augue quis tellus.  AVE
+《Algorithms》
+
 </content>
       <categories>
         
-          <category> Foo </category>
+          <category> Algorithms </category>
         
       </categories>
       <tags>
+        
+          <tag> String </tag>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title>Algorithms Analysis</title>
+      <url>/algorithms/2017/10/18/Algorithms-Analysis/</url>
+      <content type="text">详细介绍每一种算法设计的思路，并为每种方法给出一个经典案例的详细解读，总结对应设计思路，最后给出其它案例，以供参考。
+
+算法分析思路
+
+
+  迭代法
+  穷举搜索法
+  动态规划
+  贪心算法
+  回溯法
+  分治算法
+  递归
+
+
+
+
+迭代法
+
+是一种不断用旧值递推新值的过程，分精确迭代和近视迭代。是用来求方程和方程组近似根的方法。
+
+迭代变量
+迭代关系， 迭代关系选择不合理，会导致迭代失败
+迭代过程控制，也就是迭代什么时候结束，不能无休止进行下去
+
+穷举搜索法
+
+或者叫蛮力法。对可能的解的众多候选按照某种顺序逐一枚举和检验。典型的问题如选择排序和冒泡排序。
+
+背包问题
+
+给定n个重量为 w1,w2,…,wn,定价为 v1,v2,…,vn 的物品，和一个沉重为W的背包，求这些物品中一个最有价值的子集，且能装入包中。
+
+其它案例
+
+选择排序
+冒泡排序
+
+动态规划DP
+
+复杂问题不能分解成几个子问题，而分解成一系列子问题；
+
+DP通常基于一个递推公式及一个(或多个)初始状态，当前子问题解由上一次子问题解推出。
+
+状态
+状态转移方程
+递推关系
+
+动态规划算法的关键在于解决冗余，以空间换时间的技术，需要存储过程中的各种状态。可以看着是分治算法+解决冗余
+
+使用动态规划算法的问题的特征是子问题的重叠性，否则动态规划算法不具备优势
+
+###基本步骤
+
+
+  划分问题
+  选择状态
+  确定决策并写出状态转移方程
+  写出规划方程
+
+
+最长递增子序列
+
+最长递增子序列（LIS Longest Increasing Subsequence）
+
+其它案例
+
+最短路径
+
+贪心算法
+
+不追求最优解，只找到满意解。
+
+赫夫曼编码
+
+其它案例
+
+找回零钱问题
+装箱问题
+
+回溯法
+
+也叫 试探法。 是一种选优搜索法，按照选优条件搜索，当搜索到某一步，发现原先选择并不优或达不到目标，就退回重新选择。
+
+一般步骤
+
+
+  针对问题，定义解空间（ 这时候解空间是一个集合，且包含我们要找的最优解）
+  组织解空间，确定易于搜索的解空间结构，通常组织成树结构 或 图结构
+  深度优先搜索解空间，搜索过程中用剪枝函数避免无效搜索
+
+
+回溯法求解问题时，一般是一边建树，一边遍历该树；且采用非递归方法。
+
+八皇后问题
+
+8x8的国际象棋棋盘上放置8个皇后，使得任何一个皇后都无法直接吃掉其他的皇后。任意2个皇后都不能处于同一个 横线，纵线，斜线上。
+
+分析
+
+  任意2个皇后不能同一行，也就是每个皇后占据一行，通用的，每个皇后也要占据一列
+  一个斜线上也只有一个皇后
+
+
+其它案例
+
+迷宫问题
+
+分治算法
+
+将一个难以直接解决的大问题，分割成一些规模较小的相同问题，各个击破，分而治之。
+
+分治算法常用递归实现
+
+1） 问题缩小的小规模可以很容易解决
+2) 问题可以分解为规模较小相同问题
+3） 子问题的解可以合并为该问题的解
+4） 各个子问题相互独立，(如果这条不满足,转为动态规划求解）
+
+分治法的步骤：
+
+  分解
+  解决
+  合并
+
+
+大整数乘法
+
+如 26542123532213598*345987342245553677884
+
+其它案例
+
+快速排序 
+归并排序  
+最大子数组和
+
+递归
+
+递归是一种设计和描述算法的有力工具。 递归算法执行过程分 递推 和 回归  两个阶段
+
+在 递推 阶段，将大的问题分解成小的问题
+在  回归 阶段，获得最简单问题的解后，逐级返回，依次得到稍微复杂情况的解，知道获得最终的结果
+
+1） 确定递归公式
+2） 确定边界条件
+
+斐波那契数列
+
+fib(n)=fib(n-1)+fib(n-2)
+
+递归实现
+
+
+
+
+非递归实现
+
+
+
+
+其它案例
+
+阶乘计算
+梵塔问题 （三根针1，2，3表示，1号从小到大n个盘子，先要都移到3号上，不能出现大盘压小盘，找出移动次数最少的方案）
+快速排序
+
+递归运行效率较低，因为有函数调用的开销，递归多次也可能造成栈溢出。
+
+总结
+
+贪心法、分治法、动态规划都是将问题归纳为根小的、相似的子问题，通过求解子问题产生全局最优解。
+
+贪心法
+
+分治法
+
+动态规划
+
+参考
+
+《算法设计与分析基础》 Anany Levitin 
+http://www.chinaunix.net/old_jh/23/437639.html
+
+</content>
+      <categories>
+        
+          <category> Algorithms </category>
+        
+      </categories>
+      <tags>
+        
+          <tag> Analysis </tag>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title>Bitmap</title>
+      <url>/2017/10/01/Bitmap/</url>
+      <content type="text">
+
+title: Bitmap
+categories:
+
+  Big Data
+tags：
+  
+    海量数据处理
+  
+
+
+也就是用1个(或几个)bit位来标记某个元素对应的value(如果是1bitmap，就只能是元素是否存在;如果是x-bitmap,还可以是元素出现的次数等信息)。使用bit位来存储信息，在需要的存储空间方面可以大大节省。
+
+Bitmap
+
+应用场景有：
+
+
+  排序（如果是1-bitmap,就只能对无重复的数排序）
+  判断某个元素是否存在
+
+
+比如，某文件中有若干8位数字的电话号码，要求统计一共有多少个不同的电话号码？
+
+分析：8位最多99 999 999, 如果1Byte表示1个号码是否存在，需要95MB空间，但是如果1bit表示1个号码是否存在，则只需要 95/8=12MB 的空间。这时，数字k(0~99 999 999)与bit位的对应关系是：
+
+#define SIZE 15*1024*1024
+char a[SIZE];
+memset(a,0,SIZE);
+
+// a[k/8]这个字节中的 `k%8` 位命中,置为1
+// 这里要注意 big-endian 和  little-endian的问题 ，假设这里是big-endian
+a[k/8] = a[k/8] | (0x01 &amp;lt;&amp;lt; (k%8))
+
+
+
+</content>
+      <categories>
+        
+      </categories>
+      <tags>
+        
+      </tags>
+      <tags></tags>
+    </entry>
+  
+    <entry>
+      <title>Sort</title>
+      <url>/algorithms/2013/12/25/Sort/</url>
+      <content type="text">所谓排序，就是使一串记录，按照其中的某个或某些关键字的大小，递增或递减的排列起来的操作。排序算法，就是如何使得记录按照要求排列的方法。
+
+排序算法
+
+排序的稳定性 是指对于相等的元素，排序之后，任然保存2个元素的位置没有变，就是稳定的排序，反之就是不稳定排序。
+
+交换排序算法
+
+
+  冒泡排序
+  插入排序
+  选择排序
+  希尔排序
+  快排
+  归并排序
+  堆排序
+
+
+线性排序算法
+
+
+  桶排序
+
+
+交换排序算法
+
+排序算法的复杂度由 比较的次数 和 交换的次数 一起决定。
+
+直接选择排序
+
+
+  从未排序的序列中选择最小的元素，与放在第一个位置的元素交换
+  依次类推，直到全部排序
+
+
+在a【i,n】中最小的元素和 a[i]交换位置。空间复杂度O(1)，时间复杂度 O(n^2)
+
+冒泡排序
+
+
+  相邻的2各元素比较，大的向后移，经过一轮比较，做大的元素排在最后
+  第二轮，第二大的元素排倒数第二个位置
+  直到全部排好
+
+
+这样，即使是排好序的拿冒泡排序排序，比较的时间复杂度O(n^2)
+
+插入排序
+
+
+  第一个元素算作已经排好
+  取下一个元素，从已经排好的序列元素中，从后向前扫描
+  如果排好序的元素大于 新元素，排好序的元素移到下一个位置
+  重复3，直到直到最后的插入位置
+  重复2
+
+
+类似插入扑克牌的效果
+
+最坏的情况： 待排序的是一个逆序排放的数组，这样导致每一轮都要移动元素；此时复杂度是是0(n^2) 
+最好的情况： 待排序的是一已经顺序排放的数字，此时只需要做一轮比较就够了 0（n）。因此可以看到，对大部分数据已经有序这样的数组排序，使用插入排序非常有优势
+
+空间复杂度O（1）
+
+希尔排序
+
+递减增量排序算法，对插入排序的改进，实质是分组插入排序，又叫缩小增量排序
+
+
+  先将待排数列分割成若干子序列（增量为m)
+  对每个子序列使用插入排序
+  减小增量，再排序
+  对全体元素做一次插入排序
+
+
+希尔排序提升排序的奥秘就在于数据元素越有序，使用插入排序效率越高
+
+快速排序
+
+递归一次，pivot 左边都比它小，右边都比它大。这是递归，分治的思想。
+
+对 A[p…r] :
+
+  分解：A[p..q-1]  A[q+1..r],使得 A[p…q-1]&amp;lt;A[q]&amp;lt;A[q+1..r]
+  解决：递归调用 快排，，对子数组A[p..q-1],A[q+1..r]排序
+  合并（子问题相互独立的，因此用分治算法就可以了）
+
+
+具体步骤：
+
+
+  从数列中选择一个元素，作为基准 pivot。通常取分区的第一个或最后一个
+  重排数列，比 pivot 小得排左边，比pivot大的排右边，相等的随便。 一句话就是挖坑填数
+  递归的，使用相同的方式，重排左右两边的子序列
+
+
+扫描过程分2种：
+
+  挖坑排序，2头向中间扫描，先从后向前找，再从前向后找。
+  单向扫描
+
+
+    void quicksort(int *a, int left, int right){
+        if (left&amp;lt;right)//加上这个，不然有死循环，造成堆栈溢出，这也是递归结束条件
+        {
+            int i = partion(a,left,right);//使得局部有序，i作为分隔
+            quicksort(a,left,i-1); 
+            quicksort(a,i+1,right);
+        }
+    }
+
+    // 挖坑填数，2边向中间扫描
+    int partion(int *a, int start,int end){
+        int i=start,j=end;
+        int tmp = a[i]; // 这里要做越界检查
+        while(i&amp;lt;j){
+            // 从后向前扫描，找到第一个小于tmp的值，来填a[i]
+             while(i&amp;lt;j &amp;amp;&amp;amp; a[j]&amp;gt;=tmp){
+                 j--;
+            }   
+             if (i&amp;lt;j)//找到了,这时候a[j]为坑 
+            {   
+                a[i++] = a[j];  
+            }
+            // 从左向右扫描，找一个大于 tmp的 数， 去填坑a[j]
+            while(i&amp;lt;j &amp;amp;&amp;amp; a[i]&amp;lt;tmp){
+                i++;
+            }
+            if (i&amp;lt;j)
+            {
+                a[j++]=a[i];
+            }
+        }
+        //扫描完成后，i==j
+        a[i]=tmp;
+        return i;
+    }
+
+
+
+
+平均复杂度 O(n*logn)
+最坏O(n^2)
+空间复杂度
+
+快速排序是对冒泡排序的改进，划分交换排序。
+
+归并排序merge
+
+分治算法，必然用到递归
+
+2个有序数组的合并操作是O(n)的复杂度
+因此我们可以将无序的数组，分成2个子数组分别排序，然后再merge,依次类推
+
+归并排序的步骤:
+
+
+  分解。将一个数组分成n/2个子数组,每个序列2个元素，(2路归并)
+  解决。 将各个子数组都排好序，然后 merge 2个有序数组
+  
+    合并
+
+    if (length&amp;gt;1)
+ {  
+     merge_sort(a,length/2);
+     merge_sort(a+length/2,length-length/2);
+     merge_array(a,length/2,a+length/2,length-length/2);
+ }
+  
+
+
+堆排序
+
+利用堆这种数据结构设计的一种排序算法
+
+先来了解下 堆 结构
+
+堆分小根堆和大根堆
+
+堆： 任一节点小于（或大于）其所有的孩子节点，如果是大于所有孩子节点，这就是一颗大根堆，也就是根节点是堆上的最大值；如果节点小于所有的子节点，这就是一颗小跟堆，也即是根节点是堆上所有节点的最小值。
+
+堆也被称为优先队列
+堆总是一颗完全树
+
+堆用数组来存储，i节点的父节点就是(i-1)/2,左右子节点小标是 2i+1，2i+2。
+
+堆的操作有：
+
+建堆
+插入：都是插入到数组最后，然后再调整满足堆次序
+删除：删除总是发生在 A[0]处，也就是只删除根节点
+
+这样难怪堆被称为 优先队列。插入和删除分别在 数组尾部和头部，只是需要再次调整以满足堆次序。
+
+堆的应用场景有：
+优先队列  如iOS中的NSOperationQueue 就是维护一个优先队列
+堆排序
+
+我们来看看如何使用堆 来做排序?
+
+1.将待排序数列看做一颗完全二叉树的存储结构 
+2.堆化数组，结束后，根a[0]变成了最小的值（小根堆）
+3.取a[0]值，然后对堆做删除操作，此时，堆会重新 堆化数组，a[0]又是下一个最小的值。
+删除操作通常是先把数组最后的元素提到a[0]位置，然后从根节点开始进行一次从上向下的调整；调整时，先从左右孩子中找最小的交换。如果父节点比每个节点都小就不用调整。（因此，在堆排序是可以直接让 a[0]和数组最后一个元素互换，但要先保存好a[0],或者a[n-1],这样导致了使用堆排序时，递增排序使用大根堆，递减排序使用小根堆。）
+
+  循环3，就可以按从小到大的顺序取出所有数组元素。
+
+
+堆排序主要时间花在建堆期间和堆化数组，找数列中最大树只需要O(1)时间复杂度
+
+void heap_sort(int *a, int length){
+    // 建立堆 大根堆，递增排序
+    heap_build(a,length);
+    for (int i = length-1; i &amp;gt;0; --i)
+    {
+     //交换
+     heap_swop(&amp;amp;a[0],&amp;amp;a[i]);
+        //调整
+     heap_adjust(a,i);
+    }
+}
+
+
+
+推排序还可以用来求 top-K 大(小)的问题。
+
+线性排序算法
+
+上面的算法都是基于比较的排序，时间复杂度最好也是 NlogN.而非基于比较的排序，可以突破NlogN的时间下限。当然，非比较的排序，也是需要有一些限定条件的。
+
+桶排序  bucket sort
+
+比如给全校学生做个分数排序，最大分100分。我们使用一个100个空间的辅助数据，以key为分数，value为命中的次数。通过O(n)复杂度就可以完成排序任务。这种排序方式就是桶排序。
+
+也就是分配一个hash[100]的空间，初始化为0,遍历一遍，出现的数字就hash[k]++,这样再次遍历一次，就可以得到n个数的顺序了。
+
+###小结
+
+常见的排序算法都是比较排序，比较排序的时间复杂度通常为 O(n^2) 或 O(nlogn)
+但是如果带排序的数字有一些特俗性时，我们可以根据这来设计更加优化的排序算法。
+
+</content>
+      <categories>
+        
+          <category> Algorithms </category>
+        
+      </categories>
+      <tags>
+        
+          <tag> Sort </tag>
         
       </tags>
       <tags></tags>
