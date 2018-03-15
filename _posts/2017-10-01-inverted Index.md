@@ -1,9 +1,9 @@
 ---
+layout: post
 title: 倒排索引(Inverted Index)
-categories:
-- Big Data
-tags：
-- 海量数据处理
+category: Big Data
+tags:
+  - Mass data processing
 ---
 
 也叫反向索引。是文档检索系统中最常用的数据结构。

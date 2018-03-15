@@ -1,9 +1,9 @@
 ---
+layout: post
 title: Bloom filter(布隆过滤器)
-categories:
-- Big Data
-tags：
-- 海量数据处理
+category: Big Data
+tags:
+  - Mass data processing
 ---
 
 

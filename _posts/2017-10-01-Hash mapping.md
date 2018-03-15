@@ -1,9 +1,9 @@
 ---
+layout: post
 title: Hash映射,分而治之
-categories:
-- Big Data
-tags：
-- 海量数据处理
+category: Big Data
+tags:
+  - Mass data processing
 ---
 
 这里的`Hash映射`是指通过一种映射散列的方式，将海量数据均匀分布在对应的内存或更小的文件中

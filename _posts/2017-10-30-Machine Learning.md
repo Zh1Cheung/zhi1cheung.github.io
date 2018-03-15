@@ -1,7 +1,6 @@
 ---
 title: Machine Learning
-categories:
-- ML
+categories: ML
 ---
 
 

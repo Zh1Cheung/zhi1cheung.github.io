@@ -1,9 +1,9 @@
 ---
+layout: post
 title: 数据库索引
-categories:
-- Big Data
-tags：
-- 海量数据处理
+category: Big Data
+tags:
+  - Mass data processing
 ---
 
 

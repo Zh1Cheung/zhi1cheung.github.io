@@ -1,9 +1,9 @@
 ---
+layout: post
 title: 分布处理之Mapreduce
-categories:
-- Big Data
-tags：
-- 海量数据处理
+category: Big Data
+tags:
+  - Mass data processing
 ---
 ### 分布处理之Mapreduce
 
