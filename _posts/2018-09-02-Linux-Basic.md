@@ -7,8 +7,8 @@ tags:
 ---
 
 
-
-
+Linux基础教程
+---
 
 ### 框架
 	服务器：DHCP, DNS, FTP, HTTP, cobbler
