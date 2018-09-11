@@ -1,4 +1,5 @@
 ---
+layout: post
 title: 设计模式2
 categories:
 - Designer Pattern
