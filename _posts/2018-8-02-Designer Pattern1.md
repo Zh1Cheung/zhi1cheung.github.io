@@ -2,12 +2,12 @@
 title: 设计模式1 
 
 categories: 
- - Designer Pattern
+- Designer Pattern
 
 
- tags:
- - Designer Pattern
- 
+tags:
+- Designer Pattern
+
  
  
  
