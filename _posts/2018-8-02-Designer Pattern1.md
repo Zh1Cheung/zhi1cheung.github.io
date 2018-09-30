@@ -1,4 +1,4 @@
- --- 
+--- 
 title: 设计模式1 
 categories: 
  - Designer Pattern
