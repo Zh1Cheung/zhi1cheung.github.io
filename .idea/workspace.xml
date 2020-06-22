@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="c5008b14-71c3-4386-b034-2fa373f2e438" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ProjectId" id="1dQjxuOUkSZIz4Mgm7oc5TdXTe3" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="c5008b14-71c3-4386-b034-2fa373f2e438" name="Default Changelist" comment="" />
+      <created>1592364460141</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1592364460141</updated>
+      <workItem from="1592364464213" duration="6000" />
+    </task>
+    <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="535" y="116" key="FileChooserDialogImpl" timestamp="1592364467307">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="535" y="116" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1592364467307" />
+    <state x="333" y="117" key="NewModule_or_Project.wizard" timestamp="1592364468763">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="333" y="117" key="NewModule_or_Project.wizard/0.0.1536.824@0.0.1536.824" timestamp="1592364468763" />
+  </component>
+</project>
